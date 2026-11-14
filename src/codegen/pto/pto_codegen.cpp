@@ -1169,6 +1169,7 @@ void PTOCodegen::GenerateFunction(const FunctionPtr& func) {
   // Python wrapper mirrors this exact order.
   if (uses_l2_cache_offset) {
     if (!first_param) stream_ << ", ";
+    first_param = false;
     fs_.l2_cache_offset_arg = "%__pypto_l2_cache_offset";
     stream_ << fs_.l2_cache_offset_arg << ": i64";
   }
@@ -1180,13 +1181,16 @@ void PTOCodegen::GenerateFunction(const FunctionPtr& func) {
   // Named SSAs make the synthetic origin obvious in the emitted MLIR and let
   // lowerings refer to them via PTOCodegen::GetSpmd{Block,Subblock}*ArgSSA().
   if (uses_spmd_params) {
+    if (!first_param) stream_ << ", ";
+    first_param = false;
     fs_.spmd_block_idx_arg = "%__pypto_spmd_block_idx";
     fs_.spmd_block_num_arg = "%__pypto_spmd_block_num";
-    stream_ << ", " << fs_.spmd_block_idx_arg << ": i32, " << fs_.spmd_block_num_arg << ": i32";
+    stream_ << fs_.spmd_block_idx_arg << ": i32, " << fs_.spmd_block_num_arg << ": i32";
   }
   if (uses_subblock_param) {
+    if (!first_param) stream_ << ", ";
     fs_.spmd_subblock_idx_arg = "%__pypto_spmd_subblock_idx";
-    stream_ << ", " << fs_.spmd_subblock_idx_arg << ": i32";
+    stream_ << fs_.spmd_subblock_idx_arg << ": i32";
   }
 
   stream_ << ")";

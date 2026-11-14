@@ -289,9 +289,9 @@ class _CrossCoreRuntime:
                 raise ValueError(f"Unsupported split mode for push_to_aiv: {split}")
             self._cv.notify_all()
 
-    def pop_from_aic(self, split):
+    def pop_from_aic(self, split, aiv_subblockid=None):
         split = int(split)
-        lane = _get_subblock_idx()
+        lane = _get_subblock_idx() if aiv_subblockid is None else int(aiv_subblockid)
         with self._cv:
             if split == 0:
                 if self._no_split_dual_aiv_dispatch:
@@ -312,14 +312,14 @@ class _CrossCoreRuntime:
                 return queue.popleft()
             raise ValueError(f"Unsupported split mode for pop_from_aic: {split}")
 
-    def push_to_aic(self, tile, split):
+    def push_to_aic(self, tile, split, aiv_subblockid=None):
         split = int(split)
         if _is_odd_split(split):
             # pto-isa places lane 1's Vector -> Cube band at lane 1's own extent,
             # so the two only abut when the lanes are equal: there is no odd V2C
             # transport, and PTO codegen rejects these codes too.
             raise ValueError(f"Unsupported odd split mode for push_to_aic: {split}")
-        lane = _get_subblock_idx()
+        lane = _get_subblock_idx() if aiv_subblockid is None else int(aiv_subblockid)
         with self._cv:
             if split == 0:
                 if self._no_split_dual_aiv_dispatch:
@@ -909,11 +909,13 @@ def _handle_tpush_to_aiv(a: list[str], kw: dict[str, Any]) -> str:
 
 
 def _handle_tpush_to_aic(a: list[str], kw: dict[str, Any]) -> str:
-    return f"_cross_core_rt.push_to_aic({a[0]}, {_split_kwarg(kw)})"
+    lane_arg = f", {a[1]}" if len(a) == 2 else ""
+    return f"_cross_core_rt.push_to_aic({a[0]}, {_split_kwarg(kw)}{lane_arg})"
 
 
-def _handle_tpop_from_aic(_a: list[str], kw: dict[str, Any]) -> str:
-    return f"_cross_core_rt.pop_from_aic({_split_kwarg(kw)})"
+def _handle_tpop_from_aic(a: list[str], kw: dict[str, Any]) -> str:
+    lane_arg = f", {a[0]}" if a else ""
+    return f"_cross_core_rt.pop_from_aic({_split_kwarg(kw)}{lane_arg})"
 
 
 def _handle_tpop_from_aiv(_a: list[str], kw: dict[str, Any]) -> str:
