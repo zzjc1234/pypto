@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, NamedTuple, cast
 
 from pypto.pypto_core import DataType
-from pypto.pypto_core.passes import MemoryPlanner, RuntimeKind, runtime_kind_to_name
+from pypto.pypto_core.passes import AutoSyncStrategy, MemoryPlanner, RuntimeKind, runtime_kind_to_name
 
 if TYPE_CHECKING:
     from pypto.ir.pass_manager import OptimizationStrategy
@@ -141,6 +141,7 @@ def make_cache_key(  # noqa: PLR0913 — args are the key's components, one per 
     dep_layouts: tuple[tuple[str, str, str], ...] = (),
     runtime: RuntimeKind = RuntimeKind.TENSORMAP_AND_RINGBUFFER,
     enable_buffer_ir: bool = True,
+    sync_strategy: AutoSyncStrategy = AutoSyncStrategy.EVENT,
 ) -> CacheKey:
     """Build a cache key for a JIT call site.
 
@@ -199,6 +200,8 @@ def make_cache_key(  # noqa: PLR0913 — args are the key's components, one per 
             Included for ``PYPTO`` because it changes AutoTileMatmulL0 output
             and allocation. Canonicalized to false for ``DSA_RP`` and ``PTOAS``,
             which enable dbC=2 automatically regardless of this flag.
+        sync_strategy: Effective PTOAS synchronization policy. Included for both
+            in-memory and persistent cache identity; EVENT is the default.
         runtime: Effective Simpler runtime ABI resolved from the active
             ``PassContext``. Included in the key because it is baked into the
             artifact's ``kernel_config.py`` and decides which worker can bind
@@ -241,6 +244,7 @@ def make_cache_key(  # noqa: PLR0913 — args are the key's components, one per 
         ("enable_pypto_l0c_double_buffer", effective_pypto_dbc),
         ("dep_layouts", dep_layouts),
         ("runtime", runtime_kind_to_name(runtime)),
+        ("sync_strategy", sync_strategy.name.lower()),
         ("enable_buffer_ir", enable_buffer_ir),
         ("buffer_ir_version", 5 if enable_buffer_ir else 0),
     )

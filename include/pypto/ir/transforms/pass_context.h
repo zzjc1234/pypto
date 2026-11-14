@@ -235,6 +235,9 @@ enum class MemoryPlanner {
   DsaRP = 2,  ///< In-tree DSA with automatically recognized reuse penalties.
 };
 
+/// PTOAS automatic synchronization policy. Buffer-ID synchronization requires A5.
+enum class AutoSyncStrategy { Event = 0, BufId = 1 };
+
 /**
  * @brief Which Simpler runtime ABI a compilation targets.
  *
@@ -302,6 +305,7 @@ class PassContext {
    * @param runtime Which Simpler runtime ABI to target (default:
    *        TensorMapAndRingBuffer). Passes that must legalize IR for a specific
    *        runtime switch on this rather than inspecting codegen options.
+   * @param sync_strategy PTOAS auto synchronization (default: Event; BufId requires A5).
    * @param enable_buffer_ir Enable Buffer IR for supported whole kernels (default: true).
    *        Unsupported kernels retain Tile IR; selected-kernel failures propagate.
    */
@@ -311,7 +315,8 @@ class PassContext {
                        DiagnosticCheckSet disabled_diagnostics = {DiagnosticCheck::UnusedControlFlowResult},
                        MemoryPlanner memory_planner = MemoryPlanner::PyPTO,
                        bool enable_pypto_l0c_double_buffer = false, RuntimeKind runtime = kDefaultRuntimeKind,
-                       bool enable_buffer_ir = true);
+                       bool enable_buffer_ir = true,
+                       AutoSyncStrategy sync_strategy = AutoSyncStrategy::Event);
 
   /**
    * @brief Push this context onto the thread-local stack
@@ -383,6 +388,9 @@ class PassContext {
    */
   [[nodiscard]] RuntimeKind GetRuntime() const;
 
+  /// PTOAS automatic synchronization policy (Event by default).
+  [[nodiscard]] AutoSyncStrategy GetSyncStrategy() const;
+
   /// Whether supported whole kernels use Buffer IR.
   [[nodiscard]] bool GetEnableBufferIR() const;
 
@@ -414,6 +422,7 @@ class PassContext {
   bool enable_pypto_l0c_double_buffer_;
   RuntimeKind runtime_;
   bool enable_buffer_ir_;
+  AutoSyncStrategy sync_strategy_;
   PassContext* previous_;
 
   static thread_local PassContext* current_;

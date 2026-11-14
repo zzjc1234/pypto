@@ -580,6 +580,7 @@ class PassManager:
         dbc_flag = ctx.get_enable_pypto_l0c_double_buffer() if ctx else False
         runtime = ctx.get_runtime() if ctx else passes.RuntimeKind.TENSORMAP_AND_RINGBUFFER
         buffer_ir = ctx.get_enable_buffer_ir() if ctx else True
+        sync = ctx.get_sync_strategy() if ctx else passes.AutoSyncStrategy.EVENT
         outer_phase = ctx.get_diagnostic_phase() if ctx else passes.get_default_diagnostic_phase()
         if outer_phase == passes.DiagnosticPhase.POST_PASS:
             inner_phase = passes.DiagnosticPhase.PRE_PIPELINE
@@ -595,6 +596,7 @@ class PassManager:
             dbc_flag,
             runtime,
             buffer_ir,
+            sync,
         ):
             try:
                 return self._pipeline.run(input_ir)
@@ -633,6 +635,7 @@ class PassManager:
         dbc_flag = ctx.get_enable_pypto_l0c_double_buffer() if ctx else False
         runtime = ctx.get_runtime() if ctx else passes.RuntimeKind.TENSORMAP_AND_RINGBUFFER
         buffer_ir = ctx.get_enable_buffer_ir() if ctx else True
+        sync = ctx.get_sync_strategy() if ctx else passes.AutoSyncStrategy.EVENT
         dphase = ctx.get_diagnostic_phase() if ctx else passes.get_default_diagnostic_phase()
         if ctx:
             disabled = ctx.get_disabled_diagnostics()
@@ -649,6 +652,7 @@ class PassManager:
             dbc_flag,
             runtime,
             buffer_ir,
+            sync,
         ):
             try:
                 return self._pipeline.run(input_ir)

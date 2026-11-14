@@ -209,6 +209,10 @@ void BindPass(nb::module_& m) {
       .value("ROUNDTRIP", VerificationLevel::Roundtrip,
              "BASIC + print→parse structural-equality check after every pass");
 
+  nb::enum_<AutoSyncStrategy>(passes, "AutoSyncStrategy", "PTOAS automatic synchronization policy")
+      .value("EVENT", AutoSyncStrategy::Event, "Event synchronization (default)")
+      .value("BUFID", AutoSyncStrategy::BufId, "Buffer-ID synchronization (A5 only)");
+
   // Bind MemoryPlanner enum
   nb::enum_<MemoryPlanner>(passes, "MemoryPlanner", "Selects who plans on-chip buffer memory")
       .value("PYPTO", MemoryPlanner::PyPTO,
@@ -352,17 +356,17 @@ void BindPass(nb::module_& m) {
                           "verification and the diagnostic channel (warnings + performance\n"
                           "hints) for PassPipeline.")
       .def(nb::init<std::vector<PassInstrumentPtr>, VerificationLevel, DiagnosticPhase, DiagnosticCheckSet,
-                    MemoryPlanner, bool, RuntimeKind, bool>(),
+                    MemoryPlanner, bool, RuntimeKind, bool, AutoSyncStrategy>(),
            nb::arg("instruments"), nb::arg("verification_level") = VerificationLevel::Basic,
            nb::arg("diagnostic_phase") = DiagnosticPhase::PrePipeline,
            nb::arg("disabled_diagnostics") = DiagnosticCheckSet{DiagnosticCheck::UnusedControlFlowResult},
            nb::arg("memory_planner") = MemoryPlanner::PyPTO,
            nb::arg("enable_pypto_l0c_double_buffer") = false, nb::arg("runtime") = kDefaultRuntimeKind,
-           nb::arg("enable_buffer_ir") = true,
+           nb::arg("enable_buffer_ir") = true, nb::arg("sync_strategy") = AutoSyncStrategy::Event,
            "Create a PassContext with instruments, verification level, diagnostic phase gate, "
            "optional disabled diagnostic checks, memory planner selection, the experimental "
            "legacy-PyPTO chooser-emitted L0C double-buffer (dbC=2) opt-in, and the target Simpler "
-           "runtime ABI, and default-on whole-kernel Buffer IR selection")
+           "runtime ABI, default-on whole-kernel Buffer IR selection, and PTOAS synchronization policy")
       .def("__enter__",
            [](PassContext& self) -> PassContext& {
              self.EnterContext();
@@ -376,6 +380,7 @@ void BindPass(nb::module_& m) {
       .def("get_disabled_diagnostics", &PassContext::GetDisabledDiagnostics,
            "Get the diagnostic checks suppressed by this context")
       .def("get_instruments", &PassContext::GetInstruments, "Get the instruments registered on this context")
+      .def("get_sync_strategy", &PassContext::GetSyncStrategy, "Get the PTOAS synchronization policy")
       .def("get_memory_planner", &PassContext::GetMemoryPlanner,
            "Get the memory planner selection for this context")
       .def("get_enable_pypto_l0c_double_buffer", &PassContext::GetEnablePyptoL0cDoubleBuffer,

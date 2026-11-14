@@ -307,7 +307,7 @@ RuntimeKind RuntimeKindFromName(const std::string& name) {
 PassContext::PassContext(std::vector<PassInstrumentPtr> instruments, VerificationLevel verification_level,
                          DiagnosticPhase diagnostic_phase, DiagnosticCheckSet disabled_diagnostics,
                          MemoryPlanner memory_planner, bool enable_pypto_l0c_double_buffer,
-                         RuntimeKind runtime, bool enable_buffer_ir)
+                         RuntimeKind runtime, bool enable_buffer_ir, AutoSyncStrategy sync_strategy)
     : instruments_(std::move(instruments)),
       verification_level_(verification_level),
       diagnostic_phase_(diagnostic_phase),
@@ -316,9 +316,12 @@ PassContext::PassContext(std::vector<PassInstrumentPtr> instruments, Verificatio
       enable_pypto_l0c_double_buffer_(enable_pypto_l0c_double_buffer),
       runtime_(runtime),
       enable_buffer_ir_(enable_buffer_ir),
+      sync_strategy_(sync_strategy),
       previous_(nullptr) {}
 
 VerificationLevel PassContext::GetVerificationLevel() const { return verification_level_; }
+
+AutoSyncStrategy PassContext::GetSyncStrategy() const { return sync_strategy_; }
 
 MemoryPlanner PassContext::GetMemoryPlanner() const { return memory_planner_; }
 
